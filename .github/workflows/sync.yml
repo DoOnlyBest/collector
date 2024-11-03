@@ -5,8 +5,8 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 0 * * 0'  # Запуск раз в неделю
-  workflow_dispatch:  # Добавляем возможность ручного запуска
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -18,51 +18,31 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Set up Git
+      - name: Configure Git
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Add upstream repository
+      - name: Sync with upstream
         run: |
+          # Добавляем upstream
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream
 
-      - name: Sync branches
-        run: |
-          # Проверяем текущую ветку
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          echo "Current branch: $CURRENT_BRANCH"
+          # Сохраняем текущее состояние
+          git checkout -b backup
           
-          # Пробуем выполнить merge
-          if git merge upstream/master --allow-unrelated-histories; then
-            echo "Merge successful"
-          else
-            echo "Merge failed, attempting alternative approach..."
-            # Отменяем неудачный merge
-            git merge --abort
-            
-            # Создаем временную ветку
-            git checkout -b temp_merge_branch
-            
-            # Пробуем принудительно применить изменения
-            git reset --soft upstream/master
-            git add .
-            git commit -m "Sync with upstream/master (forced update)"
-            
-            # Возвращаемся на основную ветку
-            git checkout $CURRENT_BRANCH
-            git merge temp_merge_branch --allow-unrelated-histories
-            
-            # Удаляем временную ветку
-            git branch -D temp_merge_branch
-          fi
+          # Переключаемся на main и синхронизируем с upstream
+          git checkout main
+          git reset --hard upstream/master
+          
+          # Применяем специфичные для вашего форка изменения
+          git cherry-pick backup || true
+          
+          # Удаляем временную ветку
+          git branch -D backup
 
       - name: Push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git push origin main || {
-            echo "Push failed, trying force push..."
-            git push -f origin main
-          }
+        run: git push -f origin main
