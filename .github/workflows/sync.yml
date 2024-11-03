@@ -8,12 +8,15 @@ on:
     - cron: '0 0 * * 0'
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.0  # Указываем конкретную версию
         with:
           fetch-depth: 0
           ref: main
@@ -26,18 +29,11 @@ jobs:
 
       - name: Sync with upstream
         run: |
-          # Добавляем и получаем upstream
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream master
 
-          # Сохраняем текущее состояние специфичных файлов если нужно
-          # cp your-specific-file.txt /tmp/
-
           # Сброс к состоянию upstream
           git reset --hard upstream/master
-
-          # Восстанавливаем специфичные файлы если нужно
-          # cp /tmp/your-specific-file.txt .
 
           # Коммитим изменения
           git add .
