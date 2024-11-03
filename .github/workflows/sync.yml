@@ -32,30 +32,35 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Save workflow file
-        run: |
-          mkdir -p .github/workflows_temp
-          cp .github/workflows/sync.yml .github/workflows_temp/
-
       - name: Sync with upstream
         run: |
+          # Сохраняем текущее состояние workflow файла
+          mkdir -p /tmp/workflows
+          cp .github/workflows/sync.yml /tmp/workflows/
+
+          # Синхронизация с upstream
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream master
+          
+          # Создаем временную ветку для слияния
+          git checkout -b temp_sync
           git reset --hard upstream/master
-
-      - name: Restore workflow file
-        run: |
+          
+          # Восстанавливаем workflow файл
           mkdir -p .github/workflows
-          cp .github/workflows_temp/sync.yml .github/workflows/
-          rm -rf .github/workflows_temp
-
-      - name: Commit changes
-        run: |
+          cp /tmp/workflows/sync.yml .github/workflows/
+          
+          # Коммитим изменения
           git add .
           git commit -m "Sync with upstream master" || true
+          
+          # Переключаемся обратно на main и сливаем изменения
+          git checkout main
+          git merge temp_sync
+          git branch -D temp_sync
 
       - name: Push changes
         run: |
-          git push -f origin main
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
