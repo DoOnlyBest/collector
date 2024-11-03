@@ -13,38 +13,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Add upstream repository
+      - name: Sync with upstream
         run: |
+          # Добавляем и получаем upstream
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
-          git fetch upstream
-
-      - name: Sync branches (very aggressive approach)
-        run: |
-          # Получаем состояние upstream
           git fetch upstream master
-          
-          # Принудительно сбрасываем состояние локальной ветки к upstream
-          git checkout main
+
+          # Сохраняем текущее состояние специфичных файлов если нужно
+          # cp your-specific-file.txt /tmp/
+
+          # Сброс к состоянию upstream
           git reset --hard upstream/master
-          
-          # Сохраняем специфичные файлы если нужно
-          # git checkout HEAD@{1} -- path/to/your/specific/file
-          
-          # Коммитим и пушим
+
+          # Восстанавливаем специфичные файлы если нужно
+          # cp /tmp/your-specific-file.txt .
+
+          # Коммитим изменения
           git add .
-          git commit -m "Sync with upstream/master (forced update)" || true
+          git commit -m "Sync with upstream master" || true
 
       - name: Push changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push -f origin main
+        run: |
+          git push -f origin main
