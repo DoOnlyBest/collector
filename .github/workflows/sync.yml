@@ -5,22 +5,26 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 0 * * 0'  # Запуск раз в неделю
-  workflow_dispatch:  # Позволяет ручной запуск workflow
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true  # Принудительно использовать Node20
+permissions:
+  contents: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.0  # Указываем конкретную версию, совместимую с Node20
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Получаем полную историю
+          fetch-depth: 0
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}  # Используем GITHUB_TOKEN для аутентификации
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
 
       - name: Configure Git
         run: |
@@ -31,14 +35,9 @@ jobs:
         run: |
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream master
-
-          # Сброс к состоянию upstream/master
           git reset --hard upstream/master
-
-          # Коммитим изменения, если есть
           git add .
           git commit -m "Sync with upstream master" || true
 
       - name: Push changes
-        run: |
-          git push -f origin main  # Принудительная отправка изменений на main
+        run: git push -f origin main
