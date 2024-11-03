@@ -32,13 +32,13 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+      - name: Save workflow file
+        run: |
+          mkdir -p .github/workflows_temp
+          cp .github/workflows/sync.yml .github/workflows_temp/
+
       - name: Sync with upstream
         run: |
-          # Сохраняем текущее состояние workflow файла
-          mkdir -p /tmp/workflows
-          cp .github/workflows/sync.yml /tmp/workflows/
-
-          # Синхронизация с upstream
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream master
           
@@ -48,8 +48,9 @@ jobs:
           
           # Восстанавливаем workflow файл
           mkdir -p .github/workflows
-          cp /tmp/workflows/sync.yml .github/workflows/
-          
+          cp .github/workflows_temp/sync.yml .github/workflows/
+          rm -rf .github/workflows_temp
+
           # Коммитим изменения
           git add .
           git commit -m "Sync with upstream master" || true
