@@ -5,8 +5,8 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 0 * * 0'
-  workflow_dispatch:
+    - cron: '0 0 * * 0'  # Запуск раз в неделю
+  workflow_dispatch:  # Позволяет ручной запуск workflow
 
 permissions:
   contents: write
@@ -20,11 +20,12 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '20'
 
       - name: Configure Git
         run: |
@@ -40,4 +41,7 @@ jobs:
           git commit -m "Sync with upstream master" || true
 
       - name: Push changes
-        run: git push -f origin main
+        run: |
+          git push -f origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
