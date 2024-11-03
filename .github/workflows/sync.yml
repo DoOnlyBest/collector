@@ -1,49 +1,15 @@
-name: Sync with upstream
-
-on:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: '0 0 * * 0'
-  workflow_dispatch:
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: main
-
-      - name: Configure Git
+- name: Sync branches (very aggressive approach)
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Add upstream repository
-        run: |
-          git remote add upstream https://github.com/ActivityWatch/activitywatch.git
-          git fetch upstream
-
-      - name: Sync branches (aggressive approach)
-        run: |
-          # Сохраняем текущие изменения
-          git stash
+          # Получаем состояние upstream
+          git fetch upstream master
           
-          # Принудительно обновляем до состояния upstream
+          # Принудительно сбрасываем состояние локальной ветки к upstream
+          git checkout main
           git reset --hard upstream/master
           
-          # Применяем сохраненные изменения
-          git stash pop || true
+          # Сохраняем специфичные файлы если нужно
+          # git checkout HEAD@{1} -- /Users/as/Developer/dob/collector/.github/workflows
           
-          # Коммитим результат
+          # Коммитим и пушим
           git add .
-          git commit -m "Sync with upstream/master (aggressive update)" || true
-
-      - name: Push changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push -f origin main
+          git commit -m "Sync with upstream/master (forced update)" || true
