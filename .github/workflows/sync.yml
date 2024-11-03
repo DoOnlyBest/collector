@@ -1,13 +1,13 @@
 - name: Sync branches (very aggressive approach)
-        run: |
-          # Получаем состояние upstream
-          git fetch upstream master
-          
-          # Принудительно сбрасываем состояние локальной ветки к upstream
-          git checkout main
-          git reset --hard upstream/master
-        
-          
-          # Коммитим и пушим
-          git add .
-          git commit -m "Sync with upstream/master (forced update)" || true
+  run: |
+    # Получаем состояние upstream
+    git fetch upstream master
+    
+    # Принудительно сбрасываем состояние локальной ветки к upstream
+    git checkout main
+    git reset --hard upstream/master
+    
+    
+    # Коммитим и пушим
+    git add .
+    git commit -m "Sync with upstream/master (forced update)" || true
