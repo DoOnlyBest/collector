@@ -1,0 +1,82 @@
+name: Sync with upstream
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 0'  # Fixed cron syntax
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Save important files
+        run: |
+          # Create a temporary directory for important files
+          mkdir -p temp_backup
+          # Save important files
+          cp -r .github/workflows temp_backup/ || true
+          # Add other important files that need to be saved here
+          # cp path/to/important/file temp_backup/ || true
+
+      - name: Sync with upstream
+        run: |
+          # Add upstream repository
+          git remote add upstream https://github.com/ActivityWatch/activitywatch.git
+          git fetch upstream master
+
+          # Attempt to merge
+          if git merge upstream/master --no-commit --no-ff; then
+            echo "Merge successful"
+          else
+            # If merge fails, abort it
+            git merge --abort
+            
+            # Create a new branch for synchronization
+            git checkout -b sync-branch
+            git reset --hard upstream/master
+            
+            # Restore important files
+            cp -r temp_backup/* ./ || true
+            
+            # Commit changes
+            git add .
+            git commit -m "Sync with upstream and restore local files" || true
+            
+            # Switch back to main
+            git checkout main
+            git merge sync-branch --no-ff -m "Merge sync updates from upstream"
+            git branch -D sync-branch
+          fi
+
+          # Restore important files in any case
+          cp -r temp_backup/* ./ || true
+          git add .
+          git commit -m "Restore local configuration files" || true
+
+      - name: Clean up
+        run: |
+          rm -rf temp_backup
+
+      - name: Push changes
+        run: |
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
