@@ -6,6 +6,7 @@ on:
       - main
   schedule:
     - cron: '0 0 * * 0'  # Запуск раз в неделю
+  workflow_dispatch:  # Добавляем возможность ручного запуска
 
 jobs:
   sync:
@@ -14,7 +15,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Получаем полную историю
+          fetch-depth: 0
+          ref: main
 
       - name: Set up Git
         run: |
@@ -22,23 +24,45 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
       - name: Add upstream repository
-        run: git remote add upstream https://github.com/ActivityWatch/activitywatch.git
-
-      - name: Fetch upstream changes
-        run: git fetch upstream
-
-      - name: Merge upstream changes
         run: |
-          git merge upstream/master --allow-unrelated-histories || {
-            echo "Merge conflict occurred. Resolving..."
-            git merge --abort
-            git reset --hard origin/main
-            echo "Please sync manually and resolve conflicts"
-            exit 1
-          }
+          git remote add upstream https://github.com/ActivityWatch/activitywatch.git
+          git fetch upstream
 
-      - name: Push changes to origin
+      - name: Sync branches
+        run: |
+          # Проверяем текущую ветку
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+          
+          # Пробуем выполнить merge
+          if git merge upstream/master --allow-unrelated-histories; then
+            echo "Merge successful"
+          else
+            echo "Merge failed, attempting alternative approach..."
+            # Отменяем неудачный merge
+            git merge --abort
+            
+            # Создаем временную ветку
+            git checkout -b temp_merge_branch
+            
+            # Пробуем принудительно применить изменения
+            git reset --soft upstream/master
+            git add .
+            git commit -m "Sync with upstream/master (forced update)"
+            
+            # Возвращаемся на основную ветку
+            git checkout $CURRENT_BRANCH
+            git merge temp_merge_branch --allow-unrelated-histories
+            
+            # Удаляем временную ветку
+            git branch -D temp_merge_branch
+          fi
+
+      - name: Push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push origin main
+          git push origin main || {
+            echo "Push failed, trying force push..."
+            git push -f origin main
+          }
