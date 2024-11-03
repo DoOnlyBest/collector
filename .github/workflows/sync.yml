@@ -6,9 +6,7 @@
           # Принудительно сбрасываем состояние локальной ветки к upstream
           git checkout main
           git reset --hard upstream/master
-          
-          # Сохраняем специфичные файлы если нужно
-          # git checkout HEAD@{1} -- /Users/as/Developer/dob/collector/.github/workflows
+        
           
           # Коммитим и пушим
           git add .
