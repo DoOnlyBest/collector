@@ -23,24 +23,25 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Sync with upstream
+      - name: Add upstream repository
         run: |
-          # Добавляем upstream
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream
 
-          # Сохраняем текущее состояние
-          git checkout -b backup
+      - name: Sync branches (aggressive approach)
+        run: |
+          # Сохраняем текущие изменения
+          git stash
           
-          # Переключаемся на main и синхронизируем с upstream
-          git checkout main
+          # Принудительно обновляем до состояния upstream
           git reset --hard upstream/master
           
-          # Применяем специфичные для вашего форка изменения
-          git cherry-pick backup || true
+          # Применяем сохраненные изменения
+          git stash pop || true
           
-          # Удаляем временную ветку
-          git branch -D backup
+          # Коммитим результат
+          git add .
+          git commit -m "Sync with upstream/master (aggressive update)" || true
 
       - name: Push changes
         env:
