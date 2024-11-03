@@ -5,8 +5,8 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 0 * * 0'  # Запуск раз в неделю
-  workflow_dispatch:  # Позволяет ручной запуск workflow
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -32,11 +32,25 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+      - name: Save workflow file
+        run: |
+          mkdir -p .github/workflows_temp
+          cp .github/workflows/sync.yml .github/workflows_temp/
+
       - name: Sync with upstream
         run: |
           git remote add upstream https://github.com/ActivityWatch/activitywatch.git
           git fetch upstream master
           git reset --hard upstream/master
+
+      - name: Restore workflow file
+        run: |
+          mkdir -p .github/workflows
+          cp .github/workflows_temp/sync.yml .github/workflows/
+          rm -rf .github/workflows_temp
+
+      - name: Commit changes
+        run: |
           git add .
           git commit -m "Sync with upstream master" || true
 
