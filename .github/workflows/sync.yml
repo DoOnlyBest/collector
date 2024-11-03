@@ -4,20 +4,15 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   schedule:
-    - cron: '0 0 * * 0'  # Runs once a week (on Sunday)
+    - cron: '0 0 * * 0'  # Запуск раз в неделю
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          persist-credentials: false
+        uses: actions/checkout@v3  # Обновлено до последней версии
 
       - name: Set up Git
         run: |
@@ -36,4 +31,5 @@ jobs:
       - name: Push changes to origin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push origin main 
+        run: |
+          git push origin main
